@@ -264,7 +264,7 @@ export default function Navbar() {
                                 </Link>
                                 {user && (
                                     <Link
-                                        to="/profile?tab=orders"
+                                        to="/my-orders"
                                         onClick={() => setMobileMenuOpen(false)}
                                         className="flex items-center space-x-3 text-gray-600 hover:text-red-600 transition-colors py-2"
                                     >
