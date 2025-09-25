@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import toast from "react-hot-toast";
+import api from "../../api/axios";
 
 export default function AdminSuppliers() {
     const { token } = useAuth();
@@ -15,16 +16,8 @@ export default function AdminSuppliers() {
 
     const load = async () => {
         try {
-            const res = await fetch("http://localhost:8080/api/suppliers", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setSuppliers(data);
-            }
+            const res = await api.get("/suppliers");
+            setSuppliers(res.data);
         } catch (error) {
             console.error("Error fetching suppliers:", error);
             setSuppliers([]);
@@ -39,29 +32,15 @@ export default function AdminSuppliers() {
 
     const save = async () => {
         try {
-            const url = form.id
-                ? `http://localhost:8080/api/suppliers/${form.id}`
-                : "http://localhost:8080/api/suppliers";
+            const endpoint = form.id ? `/suppliers/${form.id}` : "/suppliers";
 
-            const method = form.id ? "PUT" : "POST";
+            const method = form.id ? "put" : "post";
 
-            const res = await fetch(url, {
-                method,
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(form),
-            });
-
-            if (res.ok) {
-                toast.success(form.id ? "Đã cập nhật NCC" : "Đã thêm NCC");
-                setShowForm(false);
-                setForm({ id: null, name: "", contactInfo: "" });
-                load();
-            } else {
-                toast.error("Lỗi khi lưu NCC");
-            }
+            const res = await api[method](endpoint, form);
+            toast.success(form.id ? "Đã cập nhật NCC" : "Đã thêm NCC");
+            setShowForm(false);
+            setForm({ id: null, name: "", contactInfo: "" });
+            load();
         } catch (error) {
             console.error("Error saving supplier:", error);
             toast.error("Lỗi khi lưu NCC");
@@ -71,23 +50,9 @@ export default function AdminSuppliers() {
     const del = async (id) => {
         if (!window.confirm("Xóa nhà cung cấp này?")) return;
         try {
-            const res = await fetch(
-                `http://localhost:8080/api/suppliers/${id}`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            if (res.ok) {
-                toast.success("Đã xóa NCC");
-                load();
-            } else {
-                toast.error("Không thể xóa NCC");
-            }
+            await api.delete(`/suppliers/${id}`);
+            toast.success("Đã xóa NCC");
+            load();
         } catch (error) {
             console.error("Error deleting supplier:", error);
             toast.error("Không thể xóa NCC");
