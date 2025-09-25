@@ -25,10 +25,10 @@ export default function Products() {
         // If qParam exists, use server-side search endpoint; otherwise fetch all products
         const fetchUrl =
             qParam && qParam.trim() !== ""
-                ? ``${import.meta.env.VITE_API_URL}/products/search?q=${encodeURIComponent(
+                ? `${import.meta.env.VITE_API_URL}/products/search?q=${encodeURIComponent(
                       qParam
                   )}`
-                : ``${import.meta.env.VITE_API_URL}/products`;
+                : `${import.meta.env.VITE_API_URL}/products`;
 
         setLoading(true);
         fetch(fetchUrl)
