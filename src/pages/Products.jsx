@@ -29,6 +29,7 @@ export default function Products() {
                 ? `/products/search?q=${encodeURIComponent(qParam)}`
                 : `/products`;
 
+
         setLoading(true);
         api.get(endpoint)
             .then((res) => res.data)
