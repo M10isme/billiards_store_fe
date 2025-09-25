@@ -4,6 +4,7 @@ import { FiSearch, FiFilter, FiGrid, FiList } from "react-icons/fi";
 import ProductCard from "../components/ProductCard";
 import { ListSkeleton, SectionLoading } from "../components/Loading";
 import CueImg from "../assets/Cue.png";
+import api from "../api/axios";
 
 export default function Products() {
     const [products, setProducts] = useState([]);
@@ -23,16 +24,15 @@ export default function Products() {
 
     useEffect(() => {
         // If qParam exists, use server-side search endpoint; otherwise fetch all products
-        const fetchUrl =
+        const endpoint =
             qParam && qParam.trim() !== ""
-                ? `${import.meta.env.VITE_API_URL}/products/search?q=${encodeURIComponent(
-                      qParam
-                  )}`
-                : `${import.meta.env.VITE_API_URL}/products`;
+                ? `/products/search?q=${encodeURIComponent(qParam)}`
+                : `/products`;
+
 
         setLoading(true);
-        fetch(fetchUrl)
-            .then((res) => res.json())
+        api.get(endpoint)
+            .then((res) => res.data)
             .then((data) => {
                 setProducts(data);
                 setFiltered(data);

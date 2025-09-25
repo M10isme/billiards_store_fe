@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import api from "../api/axios";
 
 const AuthContext = createContext();
 
@@ -15,31 +16,27 @@ export function AuthProvider({ children }) {
     }, [token]);
 
     const login = async (username, password) => {
-        const res = await fetch("http://localhost:8080/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password }),
-        });
+        try {
+            const res = await api.post("/auth/login", { username, password });
+            const data = res.data;
+            console.log("Login data:", data);
 
-        if (!res.ok) {
+            // Set token first (this will trigger fetchProfile effect)
+            setToken(data.token);
+
+            // Set user data from login response immediately
+            const userData = {
+                username: data.username,
+                role: data.role,
+                fullName: data.fullName || data.username, // fallback
+            };
+            setUser(userData);
+            console.log("Setting user to:", userData);
+            console.log("Current user state (may still be old):", user);
+            return data;
+        } catch (error) {
             throw new Error("Đăng nhập thất bại");
         }
-        const data = await res.json();
-        console.log("Login data:", data);
-
-        // Set token first (this will trigger fetchProfile effect)
-        setToken(data.token);
-
-        // Set user data from login response immediately
-        const userData = {
-            username: data.username,
-            role: data.role,
-            fullName: data.fullName || data.username, // fallback
-        };
-        setUser(userData);
-        console.log("Setting user to:", userData);
-        console.log("Current user state (may still be old):", user);
-        return data;
     };
 
     const register = async (
@@ -50,23 +47,19 @@ export function AuthProvider({ children }) {
         phoneNumber,
         address
     ) => {
-        const res = await fetch("http://localhost:8080/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+        try {
+            const res = await api.post("/auth/register", {
                 fullName,
                 email,
                 username,
                 password,
                 phoneNumber,
                 address,
-            }),
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            if (res.status === 400) {
-                // Handle specific validation errors
+            });
+            return res.data;
+        } catch (error) {
+            if (error.response && error.response.status === 400) {
+                const errorData = error.response.data || {};
                 if (errorData.message) {
                     throw new Error(errorData.message);
                 } else if (errorData.error) {
@@ -93,21 +86,8 @@ export function AuthProvider({ children }) {
             }
             try {
                 console.log("Fetching profile with token:", token);
-                const res = await fetch("http://localhost:8080/api/users/me", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (!res.ok) {
-                    console.log(
-                        "Profile fetch failed:",
-                        res.status,
-                        res.statusText
-                    );
-                    // token invalid or expired
-                    setUser(null);
-                    setToken(null);
-                    return;
-                }
-                const data = await res.json();
+                const res = await api.get("/users/me");
+                const data = res.data;
                 console.log("Profile data received:", data);
                 if (mounted) {
                     // Merge with existing user data, prioritizing role from login
@@ -131,21 +111,14 @@ export function AuthProvider({ children }) {
     // update profile
     const updateProfile = async (profile) => {
         if (!token) throw new Error("Not authenticated");
-        const res = await fetch("http://localhost:8080/api/users/me", {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(profile),
-        });
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || "Cập nhật thất bại");
+        try {
+            const res = await api.put("/users/me", profile);
+            const updated = res.data;
+            setUser(updated);
+            return updated;
+        } catch (error) {
+            throw new Error("Cập nhật thất bại");
         }
-        const updated = await res.json();
-        setUser(updated);
-        return updated;
     };
 
     return (
